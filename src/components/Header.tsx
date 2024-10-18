@@ -1,11 +1,15 @@
 import React, { useContext } from "react";
 import { Link } from "react-router-dom";
-import { FaSearch, FaUserCircle } from "react-icons/fa";
 import { AuthContext } from "../context/AuthContext";
 import { auth } from "../firebase";
 import { signOut } from "firebase/auth";
+import { Location } from "react-router-dom";
 
-const Header = () => {
+interface HeaderProps {
+  location: Location;
+}
+
+const Header: React.FC<HeaderProps> = ({ location }) => {
   const context = useContext(AuthContext);
 
   if (!context) {
@@ -18,29 +22,35 @@ const Header = () => {
     await signOut(auth);
   };
 
+  const hideHeaderLinks = ["/", "/signin", "/signup"].includes(
+    location.pathname
+  );
+
   return (
     <header className="bg-gray-800 text-white p-4 flex justify-between items-center">
       <Link to="/" className="text-xl font-bold">
         Communitize
       </Link>
-      <nav className="space-x-4">
-        {!user ? (
-          <>
-            <Link to="/signin" className="hover:text-gray-400">
-              Sign In
-            </Link>
-            <Link to="/signup" className="hover:text-gray-400">
-              Sign Up
-            </Link>
-          </>
-        ) : (
-          <>
-            <button onClick={handleLogout} className="hover:text-gray-400">
-              Log Out
-            </button>
-          </>
-        )}
-      </nav>
+      {!hideHeaderLinks && (
+        <nav className="space-x-4">
+          {!user ? (
+            <>
+              <Link to="/signin" className="hover:text-gray-400">
+                Sign In
+              </Link>
+              <Link to="/signup" className="hover:text-gray-400">
+                Sign Up
+              </Link>
+            </>
+          ) : (
+            <>
+              <button onClick={handleLogout} className="hover:text-gray-400">
+                Log Out
+              </button>
+            </>
+          )}
+        </nav>
+      )}
     </header>
   );
 };

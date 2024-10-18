@@ -70,7 +70,10 @@ const AuthForm: React.FC<AuthFormProps> = ({ isSignUp }) => {
         onChange={(e) => setPassword(e.target.value)}
         required
       />
-      <button className="bg-blue-500 text-white p-2 rounded" type="submit">
+      <button
+        className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded"
+        type="submit"
+      >
         {isSignUp ? "Sign Up" : "Sign In"}
       </button>
     </form>
