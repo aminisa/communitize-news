@@ -35,13 +35,9 @@ const Header = () => {
           </>
         ) : (
           <>
-            <Link to="/" className="hover:text-gray-400">
-              <FaSearch className="inline-block" /> Search ZIP Code
-            </Link>
             <button onClick={handleLogout} className="hover:text-gray-400">
               Log Out
             </button>
-            <FaUserCircle className="inline-block text-2xl" />
           </>
         )}
       </nav>
