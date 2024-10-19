@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { auth, googleProvider } from "../firebase";
+import { auth, googleProvider, db } from "../firebase";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
+  updateProfile,
 } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { getUserLocation } from "../api/open-cage";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
 interface AuthFormProps {
   isSignUp: boolean;
@@ -17,6 +19,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ isSignUp }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [error, setError] = useState("");
   const [zipCode, setZipCode] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -40,7 +43,19 @@ const AuthForm: React.FC<AuthFormProps> = ({ isSignUp }) => {
 
     try {
       if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+
+        await updateProfile(userCredential.user, { displayName: username });
+
+        await setDoc(doc(db, "users", userCredential.user.uid), {
+          username,
+          email,
+          zipCode,
+        });
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
@@ -52,7 +67,22 @@ const AuthForm: React.FC<AuthFormProps> = ({ isSignUp }) => {
 
   const handleGoogleSignIn = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      const userCredential = await signInWithPopup(auth, googleProvider);
+      const user = userCredential.user;
+
+      const username = user.displayName || user.email;
+
+      const userDocRef = doc(db, "users", user.uid);
+      const userDocSnapshot = await getDoc(userDocRef);
+
+      if (!userDocSnapshot.exists()) {
+        await setDoc(userDocRef, {
+          username,
+          email: user.email,
+          zipCode,
+        });
+      }
+
       navigate("/zip");
     } catch (error: any) {
       setError(error.message);
@@ -63,6 +93,18 @@ const AuthForm: React.FC<AuthFormProps> = ({ isSignUp }) => {
     <div className="w-full">
       {error && <p className="text-red-500">{error}</p>}
       <form onSubmit={handleAuth}>
+        {isSignUp && (
+          <div>
+            <input
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full p-2 mb-3 border rounded"
+              required
+            />
+          </div>
+        )}
         <div>
           <input
             type="email"

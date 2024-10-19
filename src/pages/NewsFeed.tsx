@@ -1,12 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  doc,
+  getDoc,
+} from "firebase/firestore";
 import { db } from "../firebase";
+import { auth } from "../firebase";
 
 interface Post {
   subject: string;
   body: string;
   timestamp: string;
+  username: string;
 }
 
 const NewsFeed = () => {
@@ -14,6 +24,8 @@ const NewsFeed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [newPost, setNewPost] = useState({ subject: "", body: "" });
   const [showForm, setShowForm] = useState(false);
+
+  const currentUserId = auth.currentUser?.uid;
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -39,7 +51,27 @@ const NewsFeed = () => {
     e.preventDefault();
 
     const timestamp = new Date().toLocaleString();
-    const newEntry = { ...newPost, timestamp, zip };
+
+    if (!currentUserId) {
+      console.error("No user is signed in.");
+      return;
+    }
+
+    const userDoc = await getDoc(doc(db, "users", currentUserId));
+
+    if (!userDoc.exists()) {
+      console.error("User document not found.");
+      return;
+    }
+
+    const username = userDoc.data()?.username;
+
+    if (!username) {
+      console.error("Username is undefined.");
+      return;
+    }
+
+    const newEntry = { ...newPost, timestamp, zip, username };
 
     try {
       await addDoc(collection(db, "posts"), newEntry);
@@ -66,7 +98,7 @@ const NewsFeed = () => {
                 <h2 className="text-xl font-bold">{post.subject}</h2>
                 <p>{post.body}</p>
                 <span className="text-gray-500 text-sm">
-                  Posted on: {post.timestamp}
+                  Posted by: {post.username} on {post.timestamp}
                 </span>
               </div>
             ))}
@@ -88,12 +120,9 @@ const NewsFeed = () => {
             className="mt-4 bg-gray-200 p-4 rounded"
           >
             <div className="mb-4">
-              <label htmlFor="subject" className="block font-bold mb-2">
-                Subject
-              </label>
               <input
-                id="subject"
                 type="text"
+                placeholder="Subject"
                 value={newPost.subject}
                 onChange={(e) =>
                   setNewPost({ ...newPost, subject: e.target.value })
@@ -103,32 +132,21 @@ const NewsFeed = () => {
               />
             </div>
             <div className="mb-4">
-              <label htmlFor="body" className="block font-bold mb-2">
-                Body
-              </label>
               <textarea
-                id="body"
+                placeholder="Body"
                 value={newPost.body}
                 onChange={(e) =>
                   setNewPost({ ...newPost, body: e.target.value })
                 }
                 className="w-full p-2 border rounded"
-                rows={4}
                 required
-              />
+              ></textarea>
             </div>
             <button
               type="submit"
               className="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded"
             >
-              Submit
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowForm(false)}
-              className="ml-4 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded"
-            >
-              Cancel
+              Post
             </button>
           </form>
         )}
