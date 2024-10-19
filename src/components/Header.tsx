@@ -1,10 +1,11 @@
 import React, { useContext } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { auth } from "../firebase";
 import { signOut } from "firebase/auth";
 import { Location } from "react-router-dom";
 import { IoHomeOutline } from "react-icons/io5";
+import { IoLogOutOutline } from "react-icons/io5";
 
 interface HeaderProps {
   location: Location;
@@ -12,6 +13,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ location }) => {
   const context = useContext(AuthContext);
+  const navigate = useNavigate();
 
   if (!context) {
     return null;
@@ -21,6 +23,7 @@ const Header: React.FC<HeaderProps> = ({ location }) => {
 
   const handleLogout = async () => {
     await signOut(auth);
+    navigate("/");
   };
 
   const hideHeaderLinks = ["/", "/signin", "/signup"].includes(
@@ -47,7 +50,7 @@ const Header: React.FC<HeaderProps> = ({ location }) => {
           ) : (
             <>
               <button onClick={handleLogout} className="hover:text-gray-400">
-                Log Out
+                <IoLogOutOutline className="text-lg" />
               </button>
             </>
           )}

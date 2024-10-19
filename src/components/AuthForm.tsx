@@ -15,11 +15,19 @@ interface AuthFormProps {
 const AuthForm: React.FC<AuthFormProps> = ({ isSignUp }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  const defaultZipCode = "12345";
+
   const handleAuth = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    if (isSignUp && password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
 
     try {
       if (isSignUp) {
@@ -27,7 +35,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ isSignUp }) => {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
-      navigate("/");
+      navigate(`/zip/${defaultZipCode}`);
     } catch (error: any) {
       setError(error.message);
     }
@@ -36,7 +44,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ isSignUp }) => {
   const handleGoogleSignIn = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
-      navigate("/");
+      navigate(`/zip/${defaultZipCode}`);
     } catch (error: any) {
       setError(error.message);
     }
@@ -66,13 +74,31 @@ const AuthForm: React.FC<AuthFormProps> = ({ isSignUp }) => {
             required
           />
         </div>
+        {isSignUp && (
+          <div>
+            <input
+              type="password"
+              placeholder="Confirm Password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full p-2 mb-3 border rounded"
+              required
+            />
+          </div>
+        )}
         <button
           type="submit"
-          className="w-full p-2 bg-blue-500 text-white rounded"
+          className="w-full p-2 bg-blue-500 hover:bg-blue-600 text-white rounded"
         >
           {isSignUp ? "Sign Up" : "Sign In"}
         </button>
       </form>
+
+      <div className="flex items-center my-4">
+        <hr className="flex-grow border-t border-gray-300" />
+        <span className="mx-2 text-gray-500">OR</span>
+        <hr className="flex-grow border-t border-gray-300" />
+      </div>
 
       <div className="mt-4">
         <button
