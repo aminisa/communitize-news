@@ -8,15 +8,23 @@ import {
   where,
   doc,
   getDoc,
+  deleteDoc,
+  updateDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { auth } from "../firebase";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTrash, faEdit } from "@fortawesome/free-solid-svg-icons";
 
 interface Post {
+  id: string;
   subject: string;
   body: string;
   timestamp: string;
   username: string;
+  userId: string;
+  zip: string;
+  edited?: boolean;
 }
 
 const NewsFeed = () => {
@@ -24,6 +32,7 @@ const NewsFeed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [newPost, setNewPost] = useState({ subject: "", body: "" });
   const [showForm, setShowForm] = useState(false);
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
 
   const currentUserId = auth.currentUser?.uid;
 
@@ -35,7 +44,9 @@ const NewsFeed = () => {
         const postsArray: Post[] = [];
 
         querySnapshot.forEach((doc) => {
-          postsArray.push(doc.data() as Post);
+          const postData = doc.data() as Post;
+          const postWithId = { ...postData, id: doc.id };
+          postsArray.push(postWithId);
         });
 
         setPosts(postsArray);
@@ -71,18 +82,65 @@ const NewsFeed = () => {
       return;
     }
 
-    const newEntry = { ...newPost, timestamp, zip, username };
+    const newEntry: Omit<Post, "id"> = {
+      timestamp,
+      zip: zip ?? "",
+      username,
+      userId: currentUserId,
+      edited: false,
+      subject: newPost.subject,
+      body: newPost.body,
+    };
 
     try {
-      await addDoc(collection(db, "posts"), newEntry);
-      setPosts((prevPosts) => [...prevPosts, newEntry]);
+      if (editingPost) {
+        const postRef = doc(db, "posts", editingPost.id);
+        await updateDoc(postRef, {
+          ...newEntry,
+          edited: true,
+          timestamp,
+        });
+        setPosts((prevPosts) =>
+          prevPosts.map((post) =>
+            post.id === editingPost.id
+              ? { ...post, ...newEntry, timestamp, edited: true }
+              : post
+          )
+        );
+      } else {
+        const addedDoc = await addDoc(collection(db, "posts"), newEntry);
+        setPosts((prevPosts) => [
+          ...prevPosts,
+          { ...newEntry, id: addedDoc.id },
+        ]);
+      }
     } catch (error) {
-      console.error("Error adding post: ", error);
+      console.error("Error adding/updating post: ", error);
     }
 
     setNewPost({ subject: "", body: "" });
     setShowForm(false);
+    setEditingPost(null);
   };
+
+  const handleDeletePost = async (postId: string) => {
+    try {
+      await deleteDoc(doc(db, "posts", postId));
+      setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
+    } catch (error) {
+      console.error("Error deleting post: ", error);
+    }
+  };
+
+  const handleEditPost = (post: Post) => {
+    setNewPost({ subject: post.subject, body: post.body });
+    setEditingPost(post);
+    setShowForm(true);
+  };
+
+  if (!currentUserId) {
+    return <p>Please sign in to view and manage posts.</p>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-800 p-8">
@@ -93,13 +151,37 @@ const NewsFeed = () => {
 
         {posts.length > 0 ? (
           <div>
-            {posts.map((post, index) => (
-              <div key={index} className="mb-4 p-4 border rounded bg-gray-100">
-                <h2 className="text-xl font-bold">{post.subject}</h2>
+            {posts.map((post) => (
+              <div
+                key={post.id}
+                className="mb-4 p-4 border rounded bg-gray-100"
+              >
+                <h2 className="text-xl font-bold">
+                  {post.subject}{" "}
+                  {post.edited && (
+                    <span className="text-sm text-gray-500">(Edited)</span>
+                  )}
+                </h2>
                 <p>{post.body}</p>
                 <span className="text-gray-500 text-sm">
                   Posted by: {post.username} on {post.timestamp}
                 </span>
+                {post.userId === currentUserId && (
+                  <div className="mt-2 flex items-end justify-end space-x-2">
+                    <button
+                      onClick={() => handleEditPost(post)}
+                      className="text-gray-500 hover:text-gray-600"
+                    >
+                      <FontAwesomeIcon icon={faEdit} />
+                    </button>
+                    <button
+                      onClick={() => handleDeletePost(post.id)}
+                      className="text-gray-500 hover:text-gray-600"
+                    >
+                      <FontAwesomeIcon icon={faTrash} />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -146,7 +228,7 @@ const NewsFeed = () => {
               type="submit"
               className="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded"
             >
-              Post
+              {editingPost ? "Update Post" : "Post"}
             </button>
           </form>
         )}
