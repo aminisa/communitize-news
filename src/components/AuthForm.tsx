@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { auth } from "../firebase";
+import { auth, googleProvider } from "../firebase";
 import {
-  createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
 } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { FcGoogle } from "react-icons/fc";
 
 interface AuthFormProps {
   isSignUp: boolean;
@@ -14,69 +15,75 @@ interface AuthFormProps {
 const AuthForm: React.FC<AuthFormProps> = ({ isSignUp }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { signIn } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAuth = async (event: React.FormEvent) => {
+    event.preventDefault();
 
     try {
       if (isSignUp) {
-        const userCredential = await createUserWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-
-        const userData = { email: userCredential.user.email || "" };
-        signIn(userData);
-
-        navigate("/");
+        await createUserWithEmailAndPassword(auth, email, password);
       } else {
-        const userCredential = await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-
-        const userData = { email: userCredential.user.email || "" };
-        signIn(userData);
-
-        navigate("/");
+        await signInWithEmailAndPassword(auth, email, password);
       }
-    } catch (error) {
-      console.error("Authentication error:", error);
+      navigate("/");
+    } catch (error: any) {
+      setError(error.message);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+      navigate("/");
+    } catch (error: any) {
+      setError(error.message);
     }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col gap-4 max-w-md mx-auto"
-    >
-      <input
-        type="email"
-        className="border p-2 rounded"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-      />
-      <input
-        type="password"
-        className="border p-2 rounded"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-      />
-      <button
-        className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded"
-        type="submit"
-      >
-        {isSignUp ? "Sign Up" : "Sign In"}
-      </button>
-    </form>
+    <div className="w-full">
+      {error && <p className="text-red-500">{error}</p>}
+      <form onSubmit={handleAuth}>
+        <div>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full p-2 mb-3 border rounded"
+            required
+          />
+        </div>
+        <div>
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full p-2 mb-3 border rounded"
+            required
+          />
+        </div>
+        <button
+          type="submit"
+          className="w-full p-2 bg-blue-500 text-white rounded"
+        >
+          {isSignUp ? "Sign Up" : "Sign In"}
+        </button>
+      </form>
+
+      <div className="mt-4">
+        <button
+          onClick={handleGoogleSignIn}
+          className="w-full p-2 bg-white text-gray-700 border border-gray-300 rounded flex items-center justify-center space-x-2 hover:bg-gray-100"
+        >
+          <FcGoogle className="text-xl" />
+          <span>Sign in with Google</span>
+        </button>
+      </div>
+    </div>
   );
 };
 

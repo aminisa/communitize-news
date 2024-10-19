@@ -4,6 +4,7 @@ import { AuthContext } from "../context/AuthContext";
 import { auth } from "../firebase";
 import { signOut } from "firebase/auth";
 import { Location } from "react-router-dom";
+import { IoHomeOutline } from "react-icons/io5";
 
 interface HeaderProps {
   location: Location;
@@ -28,8 +29,9 @@ const Header: React.FC<HeaderProps> = ({ location }) => {
 
   return (
     <header className="bg-gray-800 text-white p-4 flex justify-between items-center">
-      <Link to="/" className="text-xl font-bold">
-        Communitize
+      <Link to="/" className="flex items-center text-xl font-bold space-x-2">
+        <span>Communitize</span>
+        <IoHomeOutline />
       </Link>
       {!hideHeaderLinks && (
         <nav className="space-x-4">
