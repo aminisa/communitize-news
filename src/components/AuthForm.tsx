@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { auth, googleProvider } from "../firebase";
 import {
   signInWithEmailAndPassword,
@@ -7,6 +7,7 @@ import {
 } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
+import { getUserLocation } from "../api/open-cage";
 
 interface AuthFormProps {
   isSignUp: boolean;
@@ -17,9 +18,17 @@ const AuthForm: React.FC<AuthFormProps> = ({ isSignUp }) => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [zipCode, setZipCode] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const defaultZipCode = "12345";
+  useEffect(() => {
+    const fetchZipCode = async () => {
+      const zip = await getUserLocation();
+      setZipCode(zip);
+    };
+
+    fetchZipCode();
+  }, []);
 
   const handleAuth = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -35,7 +44,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ isSignUp }) => {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
-      navigate(`/zip/${defaultZipCode}`);
+      navigate("/zip");
     } catch (error: any) {
       setError(error.message);
     }
@@ -44,7 +53,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ isSignUp }) => {
   const handleGoogleSignIn = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
-      navigate(`/zip/${defaultZipCode}`);
+      navigate("/zip");
     } catch (error: any) {
       setError(error.message);
     }
