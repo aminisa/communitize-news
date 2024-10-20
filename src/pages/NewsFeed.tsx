@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   collection,
   addDoc,
@@ -14,7 +14,12 @@ import {
 import { db } from "../firebase";
 import { auth } from "../firebase";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrash, faEdit } from "@fortawesome/free-solid-svg-icons";
+import {
+  faTrash,
+  faEdit,
+  faPlus,
+  faArrowLeft,
+} from "@fortawesome/free-solid-svg-icons";
 
 interface Post {
   id: string;
@@ -29,6 +34,7 @@ interface Post {
 
 const NewsFeed = () => {
   const { zip } = useParams<{ zip: string }>();
+  const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [newPost, setNewPost] = useState({ subject: "", body: "" });
   const [showForm, setShowForm] = useState(false);
@@ -138,6 +144,10 @@ const NewsFeed = () => {
     setShowForm(true);
   };
 
+  const handleBack = () => {
+    navigate(-1);
+  };
+
   if (!currentUserId) {
     return <p>Please sign in to view and manage posts.</p>;
   }
@@ -145,9 +155,17 @@ const NewsFeed = () => {
   return (
     <div className="min-h-screen bg-gray-800 p-8">
       <div className="bg-white shadow-md rounded-lg p-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">
-          Posts for ZIP Code: {zip}
-        </h1>
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold text-gray-800">
+            Posts for ZIP Code: {zip}
+          </h1>
+          <button
+            onClick={handleBack}
+            className="text-gray-500 hover:text-gray-600"
+          >
+            <FontAwesomeIcon icon={faArrowLeft} className="w-5 h-5" />
+          </button>
+        </div>
 
         {posts.length > 0 ? (
           <div>
@@ -159,7 +177,7 @@ const NewsFeed = () => {
                 <h2 className="text-xl font-bold">
                   {post.subject}{" "}
                   {post.edited && (
-                    <span className="text-sm text-gray-500">(Edited)</span>
+                    <span className="text-gray-500">(Edited)</span>
                   )}
                 </h2>
                 <p>{post.body}</p>
@@ -189,12 +207,11 @@ const NewsFeed = () => {
           <p>No posts yet for this ZIP code.</p>
         )}
 
-        <button
-          onClick={() => setShowForm(true)}
-          className="mt-4 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
-        >
-          Create Post
-        </button>
+        <div className="flex justify-end mt-4">
+          <button onClick={() => setShowForm(true)} className="text-gray-500">
+            <FontAwesomeIcon icon={faPlus} className="w-5 h-5" />
+          </button>
+        </div>
 
         {showForm && (
           <form
