@@ -20,6 +20,8 @@ import {
   faPlus,
   faArrowLeft,
   faTimes,
+  faSortUp,
+  faSortDown,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface Post {
@@ -40,6 +42,7 @@ const NewsFeed = () => {
   const [newPost, setNewPost] = useState({ subject: "", body: "" });
   const [showForm, setShowForm] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc"); // State for sorting
 
   const currentUserId = auth.currentUser?.uid;
 
@@ -64,6 +67,14 @@ const NewsFeed = () => {
 
     fetchPosts();
   }, [zip]);
+
+  const sortedPosts = [...posts].sort((a, b) => {
+    const aDate = new Date(a.timestamp);
+    const bDate = new Date(b.timestamp);
+    return sortOrder === "asc"
+      ? aDate.getTime() - bDate.getTime()
+      : bDate.getTime() - aDate.getTime();
+  });
 
   const handlePostSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,6 +168,10 @@ const NewsFeed = () => {
     }
   };
 
+  const toggleSortOrder = (order: "asc" | "desc") => {
+    setSortOrder(order);
+  };
+
   if (!currentUserId) {
     return <p>Please sign in to view and manage posts.</p>;
   }
@@ -176,9 +191,9 @@ const NewsFeed = () => {
           </button>
         </div>
 
-        {posts.length > 0 ? (
+        {sortedPosts.length > 0 ? (
           <div>
-            {posts.map((post) => (
+            {sortedPosts.map((post) => (
               <div
                 key={post.id}
                 className="mb-4 p-4 border rounded bg-gray-100"
@@ -216,7 +231,27 @@ const NewsFeed = () => {
           <p>No posts yet for this ZIP code.</p>
         )}
 
-        <div className="flex justify-end mt-4">
+        <div className="mt-4 flex justify-between items-start">
+          <div className="flex items-center space-x-2">
+            <span className="text-gray-500">Sort By:</span>
+
+            {sortOrder === "asc" ? (
+              <button
+                onClick={() => toggleSortOrder("desc")}
+                className="text-gray-500 hover:text-gray-600"
+              >
+                Descending
+              </button>
+            ) : (
+              <button
+                onClick={() => toggleSortOrder("asc")}
+                className="text-gray-500 hover:text-gray-600"
+              >
+                Ascending
+              </button>
+            )}
+          </div>
+
           <button onClick={toggleShowForm} className="text-gray-500">
             <FontAwesomeIcon
               icon={showForm ? faTimes : faPlus}
@@ -251,13 +286,13 @@ const NewsFeed = () => {
                 }
                 className="w-full p-2 border rounded"
                 required
-              ></textarea>
+              />
             </div>
             <button
               type="submit"
-              className="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded"
+              className="bg-blue-500 text-white p-2 rounded"
             >
-              {editingPost ? "Update Post" : "Post"}
+              {editingPost ? "Update Post" : "Create Post"}
             </button>
           </form>
         )}
