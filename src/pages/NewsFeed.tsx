@@ -19,6 +19,7 @@ import {
   faEdit,
   faPlus,
   faArrowLeft,
+  faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface Post {
@@ -148,6 +149,14 @@ const NewsFeed = () => {
     navigate(-1);
   };
 
+  const toggleShowForm = () => {
+    setShowForm((prev) => !prev);
+    if (showForm) {
+      setNewPost({ subject: "", body: "" });
+      setEditingPost(null);
+    }
+  };
+
   if (!currentUserId) {
     return <p>Please sign in to view and manage posts.</p>;
   }
@@ -208,8 +217,11 @@ const NewsFeed = () => {
         )}
 
         <div className="flex justify-end mt-4">
-          <button onClick={() => setShowForm(true)} className="text-gray-500">
-            <FontAwesomeIcon icon={faPlus} className="w-5 h-5" />
+          <button onClick={toggleShowForm} className="text-gray-500">
+            <FontAwesomeIcon
+              icon={showForm ? faTimes : faPlus}
+              className="w-5 h-5"
+            />
           </button>
         </div>
 
