@@ -42,7 +42,7 @@ const NewsFeed = () => {
   const [newPost, setNewPost] = useState({ subject: "", body: "" });
   const [showForm, setShowForm] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc"); // State for sorting
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   const currentUserId = auth.currentUser?.uid;
 
