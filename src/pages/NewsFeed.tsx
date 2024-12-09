@@ -41,6 +41,8 @@ const NewsFeed = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [postToDelete, setPostToDelete] = useState<string | null>(null);
 
   const currentUserId = auth.currentUser?.uid;
 
@@ -139,19 +141,29 @@ const NewsFeed = () => {
     setEditingPost(null);
   };
 
-  const handleDeletePost = async (postId: string) => {
-    try {
-      await deleteDoc(doc(db, "posts", postId));
-      setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
-    } catch (error) {
-      console.error("Error deleting post: ", error);
-    }
+  const handleDeleteClick = (postId: string) => {
+    setPostToDelete(postId);
+    setShowDeleteModal(true);
   };
 
-  const handleEditPost = (post: Post) => {
-    setNewPost({ subject: post.subject, body: post.body });
-    setEditingPost(post);
-    setShowForm(true);
+  const handleDeletePostConfirmed = async () => {
+    if (postToDelete) {
+      try {
+        await deleteDoc(doc(db, "posts", postToDelete));
+        setPosts((prevPosts) =>
+          prevPosts.filter((post) => post.id !== postToDelete)
+        );
+      } catch (error) {
+        console.error("Error deleting post: ", error);
+      }
+    }
+    setShowDeleteModal(false);
+    setPostToDelete(null);
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setPostToDelete(null);
   };
 
   const handleBack = () => {
@@ -209,13 +221,13 @@ const NewsFeed = () => {
                 {post.userId === currentUserId && (
                   <div className="mt-2 flex items-end justify-end space-x-2">
                     <button
-                      onClick={() => handleEditPost(post)}
+                      onClick={() => setEditingPost(post)}
                       className="text-gray-500 hover:text-gray-600"
                     >
                       <FontAwesomeIcon icon={faEdit} />
                     </button>
                     <button
-                      onClick={() => handleDeletePost(post.id)}
+                      onClick={() => handleDeleteClick(post.id)}
                       className="text-gray-500 hover:text-gray-600"
                     >
                       <FontAwesomeIcon icon={faTrash} />
@@ -226,75 +238,33 @@ const NewsFeed = () => {
             ))}
           </div>
         ) : (
-          <p>No posts yet for this ZIP code.</p>
-        )}
-
-        <div className="mt-4 flex justify-between items-start">
-          <div className="flex items-center space-x-2">
-            <span className="text-gray-500">Sort By:</span>
-
-            {sortOrder === "asc" ? (
-              <button
-                onClick={() => toggleSortOrder("desc")}
-                className="text-gray-500 hover:text-gray-600"
-              >
-                Descending
-              </button>
-            ) : (
-              <button
-                onClick={() => toggleSortOrder("asc")}
-                className="text-gray-500 hover:text-gray-600"
-              >
-                Ascending
-              </button>
-            )}
-          </div>
-
-          <button onClick={toggleShowForm} className="text-gray-500">
-            <FontAwesomeIcon
-              icon={showForm ? faTimes : faPlus}
-              className="w-5 h-5"
-            />
-          </button>
-        </div>
-
-        {showForm && (
-          <form
-            onSubmit={handlePostSubmit}
-            className="mt-4 bg-gray-200 p-4 rounded"
-          >
-            <div className="mb-4">
-              <input
-                type="text"
-                placeholder="Subject"
-                value={newPost.subject}
-                onChange={(e) =>
-                  setNewPost({ ...newPost, subject: e.target.value })
-                }
-                className="w-full p-2 border rounded"
-                required
-              />
-            </div>
-            <div className="mb-4">
-              <textarea
-                placeholder="Body"
-                value={newPost.body}
-                onChange={(e) =>
-                  setNewPost({ ...newPost, body: e.target.value })
-                }
-                className="w-full p-2 border rounded"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="bg-blue-500 text-white p-2 rounded"
-            >
-              {editingPost ? "Update Post" : "Create Post"}
-            </button>
-          </form>
+          <p>No posts found for this ZIP code.</p>
         )}
       </div>
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 flex justify-center items-center bg-gray-600 bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-bold">
+              Are you sure you want to delete this post?
+            </h2>
+            <div className="mt-4 flex justify-center space-x-4 items-center">
+              <button
+                onClick={handleDeletePostConfirmed}
+                className="bg-red-400 text-white p-2 rounded hover:bg-red-600 w-1/2"
+              >
+                Delete
+              </button>
+              <button
+                onClick={handleCancelDelete}
+                className="bg-gray-400 text-white p-2 rounded hover:bg-gray-600 w-1/2"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
