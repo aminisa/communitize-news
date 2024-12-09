@@ -51,9 +51,9 @@ const NewsFeed = () => {
         const querySnapshot = await getDocs(q);
         const postsArray: Post[] = [];
 
-        querySnapshot.forEach((doc) => {
-          const postData = doc.data() as Post;
-          const postWithId = { ...postData, id: doc.id };
+        querySnapshot.forEach((docSnap) => {
+          const postData = docSnap.data() as Post;
+          const postWithId = { ...postData, id: docSnap.id };
           postsArray.push(postWithId);
         });
 
