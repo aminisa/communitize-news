@@ -248,43 +248,47 @@ const NewsFeed = () => {
                   Posted by: {post.username} on {post.timestamp}
                 </span>
 
-                <div className="mt-2 flex space-x-4">
-                  <button
-                    onClick={() => handleThumbReaction(post.id, "thumbsUp")}
-                    className={`text-gray-500 ${
-                      postReactions.get(post.id)?.thumbsUp
-                        ? "text-blue-500"
-                        : ""
-                    }`}
-                  >
-                    <FontAwesomeIcon icon={faThumbsUp} />
-                  </button>
-                  <button
-                    onClick={() => handleThumbReaction(post.id, "thumbsDown")}
-                    className={`text-gray-500 ${
-                      postReactions.get(post.id)?.thumbsDown
-                        ? "text-red-500"
-                        : ""
-                    }`}
-                  >
-                    <FontAwesomeIcon icon={faThumbsDown} />
-                  </button>
-                </div>
-
                 {post.userId === currentUserId && (
-                  <div className="mt-2 flex items-end justify-end space-x-2">
-                    <button
-                      onClick={() => handleEditPost(post)}
-                      className="text-gray-500 hover:text-gray-600"
-                    >
-                      <FontAwesomeIcon icon={faEdit} />
-                    </button>
-                    <button
-                      onClick={() => handleConfirmDelete(post.id)}
-                      className="text-gray-500 hover:text-gray-600"
-                    >
-                      <FontAwesomeIcon icon={faTrash} />
-                    </button>
+                  <div className="mt-2 flex justify-between items-center space-x-2">
+                    <div className="flex justify-start space-x-2">
+                      <button
+                        onClick={() => handleThumbReaction(post.id, "thumbsUp")}
+                        className={`text-gray-500 ${
+                          postReactions.get(post.id)?.thumbsUp
+                            ? "text-blue-500"
+                            : ""
+                        }`}
+                      >
+                        <FontAwesomeIcon icon={faThumbsUp} />
+                      </button>
+                      <button
+                        onClick={() =>
+                          handleThumbReaction(post.id, "thumbsDown")
+                        }
+                        className={`text-gray-500 ${
+                          postReactions.get(post.id)?.thumbsDown
+                            ? "text-red-500"
+                            : ""
+                        }`}
+                      >
+                        <FontAwesomeIcon icon={faThumbsDown} />
+                      </button>
+                    </div>
+
+                    <div className="flex justify-end space-x-2">
+                      <button
+                        onClick={() => handleEditPost(post)}
+                        className="text-gray-500 hover:text-gray-600"
+                      >
+                        <FontAwesomeIcon icon={faEdit} />
+                      </button>
+                      <button
+                        onClick={() => handleConfirmDelete(post.id)}
+                        className="text-gray-500 hover:text-gray-600"
+                      >
+                        <FontAwesomeIcon icon={faTrash} />
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -352,7 +356,9 @@ const NewsFeed = () => {
         {confirmDelete && (
           <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white p-6 rounded shadow-lg">
-              <h2 className="text-xl mb-4">Are you sure you want to delete this post?</h2>
+              <h2 className="text-xl mb-4">
+                Are you sure you want to delete this post?
+              </h2>
               <div className="flex justify-center items-center space-x-4">
                 <button
                   onClick={handleDeletePost}
