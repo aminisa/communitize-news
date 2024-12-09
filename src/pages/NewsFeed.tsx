@@ -41,6 +41,7 @@ const NewsFeed = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null); // state for the post to delete
 
   const currentUserId = auth.currentUser?.uid;
 
@@ -139,12 +140,15 @@ const NewsFeed = () => {
     setEditingPost(null);
   };
 
-  const handleDeletePost = async (postId: string) => {
-    try {
-      await deleteDoc(doc(db, "posts", postId));
-      setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
-    } catch (error) {
-      console.error("Error deleting post: ", error);
+  const handleDeletePost = async () => {
+    if (confirmDelete) {
+      try {
+        await deleteDoc(doc(db, "posts", confirmDelete));
+        setPosts((prevPosts) => prevPosts.filter((post) => post.id !== confirmDelete));
+        setConfirmDelete(null);
+      } catch (error) {
+        console.error("Error deleting post: ", error);
+      }
     }
   };
 
@@ -168,6 +172,14 @@ const NewsFeed = () => {
 
   const toggleSortOrder = (order: "asc" | "desc") => {
     setSortOrder(order);
+  };
+
+  const handleConfirmDelete = (postId: string) => {
+    setConfirmDelete(postId);
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmDelete(null);
   };
 
   if (!currentUserId) {
@@ -215,7 +227,7 @@ const NewsFeed = () => {
                       <FontAwesomeIcon icon={faEdit} />
                     </button>
                     <button
-                      onClick={() => handleDeletePost(post.id)}
+                      onClick={() => handleConfirmDelete(post.id)}
                       className="text-gray-500 hover:text-gray-600"
                     >
                       <FontAwesomeIcon icon={faTrash} />
@@ -293,6 +305,28 @@ const NewsFeed = () => {
               {editingPost ? "Update Post" : "Create Post"}
             </button>
           </form>
+        )}
+
+        {confirmDelete && (
+          <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded shadow-lg">
+              <h2 className="text-xl mb-4">Are you sure you want to delete this post?</h2>
+              <div className="flex justify-center items-center space-x-4">
+                <button
+                  onClick={handleDeletePost}
+                  className="px-4 py-2 bg-red-400 hover:bg-red-500 text-white rounded w-1/2"
+                >
+                  Delete
+                </button>
+                <button
+                  onClick={handleCancelDelete}
+                  className="px-4 py-2 bg-gray-400 hover:bg-gray-500 text-white rounded w-1/2"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
