@@ -20,6 +20,8 @@ import {
   faPlus,
   faArrowLeft,
   faTimes,
+  faThumbsUp,
+  faThumbsDown,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface Post {
@@ -41,7 +43,10 @@ const NewsFeed = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null); // state for the post to delete
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [postReactions, setPostReactions] = useState<
+    Map<string, { thumbsUp: boolean; thumbsDown: boolean }>
+  >(new Map());
 
   const currentUserId = auth.currentUser?.uid;
 
@@ -144,12 +149,36 @@ const NewsFeed = () => {
     if (confirmDelete) {
       try {
         await deleteDoc(doc(db, "posts", confirmDelete));
-        setPosts((prevPosts) => prevPosts.filter((post) => post.id !== confirmDelete));
+        setPosts((prevPosts) =>
+          prevPosts.filter((post) => post.id !== confirmDelete)
+        );
         setConfirmDelete(null);
       } catch (error) {
         console.error("Error deleting post: ", error);
       }
     }
+  };
+
+  const handleThumbReaction = (
+    postId: string,
+    reactionType: "thumbsUp" | "thumbsDown"
+  ) => {
+    setPostReactions((prevReactions) => {
+      const updatedReactions = new Map(prevReactions);
+      const currentReactions = updatedReactions.get(postId) || {
+        thumbsUp: false,
+        thumbsDown: false,
+      };
+
+      if (reactionType === "thumbsUp") {
+        currentReactions.thumbsUp = !currentReactions.thumbsUp;
+      } else if (reactionType === "thumbsDown") {
+        currentReactions.thumbsDown = !currentReactions.thumbsDown;
+      }
+
+      updatedReactions.set(postId, currentReactions);
+      return updatedReactions;
+    });
   };
 
   const handleEditPost = (post: Post) => {
@@ -218,6 +247,30 @@ const NewsFeed = () => {
                 <span className="text-gray-500 text-sm">
                   Posted by: {post.username} on {post.timestamp}
                 </span>
+
+                <div className="mt-2 flex space-x-4">
+                  <button
+                    onClick={() => handleThumbReaction(post.id, "thumbsUp")}
+                    className={`text-gray-500 ${
+                      postReactions.get(post.id)?.thumbsUp
+                        ? "text-blue-500"
+                        : ""
+                    }`}
+                  >
+                    <FontAwesomeIcon icon={faThumbsUp} />
+                  </button>
+                  <button
+                    onClick={() => handleThumbReaction(post.id, "thumbsDown")}
+                    className={`text-gray-500 ${
+                      postReactions.get(post.id)?.thumbsDown
+                        ? "text-red-500"
+                        : ""
+                    }`}
+                  >
+                    <FontAwesomeIcon icon={faThumbsDown} />
+                  </button>
+                </div>
+
                 {post.userId === currentUserId && (
                   <div className="mt-2 flex items-end justify-end space-x-2">
                     <button
@@ -271,36 +324,25 @@ const NewsFeed = () => {
         </div>
 
         {showForm && (
-          <form
-            onSubmit={handlePostSubmit}
-            className="mt-4 bg-gray-200 p-4 rounded"
-          >
-            <div className="mb-4">
-              <input
-                type="text"
-                placeholder="Subject"
-                value={newPost.subject}
-                onChange={(e) =>
-                  setNewPost({ ...newPost, subject: e.target.value })
-                }
-                className="w-full p-2 border rounded"
-                required
-              />
-            </div>
-            <div className="mb-4">
-              <textarea
-                placeholder="Body"
-                value={newPost.body}
-                onChange={(e) =>
-                  setNewPost({ ...newPost, body: e.target.value })
-                }
-                className="w-full p-2 border rounded"
-                required
-              />
-            </div>
+          <form onSubmit={handlePostSubmit} className="mt-4">
+            <input
+              type="text"
+              placeholder="Subject"
+              value={newPost.subject}
+              onChange={(e) =>
+                setNewPost({ ...newPost, subject: e.target.value })
+              }
+              className="w-full px-4 py-2 border rounded mb-4"
+            />
+            <textarea
+              placeholder="Body"
+              value={newPost.body}
+              onChange={(e) => setNewPost({ ...newPost, body: e.target.value })}
+              className="w-full px-4 py-2 border rounded mb-4"
+            />
             <button
               type="submit"
-              className="bg-blue-500 text-white p-2 rounded"
+              className="w-1/6 px-4 py-2 bg-blue-400 hover:bg-blue-500 text-white rounded"
             >
               {editingPost ? "Update Post" : "Create Post"}
             </button>
