@@ -20,8 +20,6 @@ import {
   faPlus,
   faArrowLeft,
   faTimes,
-  faSortUp,
-  faSortDown,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface Post {
