@@ -1,14 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { auth } from "../firebase";
-import { onAuthStateChanged } from "firebase/auth";
-
-interface User {
-  email: string;
-}
+import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 
 interface AuthContextType {
-  user: User | null;
-  signIn: (userData: User) => void;
+  user: FirebaseUser | null;
+  signIn: (userData: FirebaseUser) => void;
   signOut: () => void;
 }
 
@@ -19,22 +15,17 @@ export const AuthContext = createContext<AuthContextType | undefined>(
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<FirebaseUser | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        const userData = { email: user.email || "" };
-        setUser(userData);
-      } else {
-        setUser(null);
-      }
+      setUser(user);
     });
 
     return () => unsubscribe();
   }, []);
 
-  const signIn = (userData: User) => {
+  const signIn = (userData: FirebaseUser) => {
     setUser(userData);
   };
 

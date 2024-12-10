@@ -8,6 +8,7 @@ import {
   where,
   doc,
   getDoc,
+  setDoc,
   deleteDoc,
   updateDoc,
 } from "firebase/firestore";
@@ -22,6 +23,8 @@ import {
   faTimes,
   faThumbsUp,
   faThumbsDown,
+  faBell,
+  faBellSlash,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface Post {
@@ -47,8 +50,81 @@ const NewsFeed = () => {
   const [postReactions, setPostReactions] = useState<
     Map<string, { thumbsUp: boolean; thumbsDown: boolean }>
   >(new Map());
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   const currentUserId = auth.currentUser?.uid;
+
+  useEffect(() => {
+    if (!currentUserId || !zip) return;
+
+    const checkSubscription = async () => {
+      try {
+        const docRef = doc(db, "subscriptions", currentUserId);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const zipCodes = data.zipCodes || [];
+          setIsSubscribed(zipCodes.includes(zip));
+        }
+      } catch (error) {
+        console.error("Error checking subscription:", error);
+      }
+    };
+
+    checkSubscription();
+  }, [currentUserId, zip]);
+
+  const handleSubscribe = async () => {
+    if (!currentUserId || !zip) return;
+
+    try {
+      const docRef = doc(db, "subscriptions", currentUserId);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const zipCodes = Array.isArray(data.zipCodes) ? data.zipCodes : [];
+        await updateDoc(docRef, {
+          zipCodes: Array.from(new Set([...zipCodes, zip])),
+        });
+      } else {
+        await setDoc(docRef, {
+          userId: currentUserId,
+          zipCodes: [zip],
+        });
+      }
+
+      setIsSubscribed(true);
+    } catch (error) {
+      console.error("Error subscribing to zip code:", error);
+    }
+  };
+
+  const handleUnsubscribe = async () => {
+    if (!currentUserId || !zip) return;
+
+    try {
+      const docRef = doc(db, "subscriptions", currentUserId);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const updatedZipCodes = docSnap
+          .data()
+          .zipCodes.filter((subscribedZip: string) => subscribedZip !== zip);
+
+        if (updatedZipCodes.length > 0) {
+          await updateDoc(docRef, { zipCodes: updatedZipCodes });
+        } else {
+          await deleteDoc(docRef);
+        }
+
+        setIsSubscribed(false);
+      }
+    } catch (error) {
+      console.error("Error unsubscribing from zip code:", error);
+    }
+  };
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -219,8 +295,25 @@ const NewsFeed = () => {
     <div className="min-h-screen bg-gray-800 p-8">
       <div className="bg-white shadow-md rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold text-gray-800">
+          <h1 className="text-2xl font-bold text-gray-800 flex items-center">
             Posts for ZIP Code: {zip}
+            <div className="ml-4">
+              {isSubscribed ? (
+                <button
+                  onClick={handleUnsubscribe}
+                  className="p-2 bg-red-400 hover:bg-red-500 text-white rounded-full"
+                >
+                  <FontAwesomeIcon icon={faBellSlash} className="w-6 h-6" />
+                </button>
+              ) : (
+                <button
+                  onClick={handleSubscribe}
+                  className="p-2 bg-green-400 hover:bg-green-500 text-white rounded-full"
+                >
+                  <FontAwesomeIcon icon={faBell} className="w-6 h-6" />
+                </button>
+              )}
+            </div>
           </h1>
           <button
             onClick={handleBack}

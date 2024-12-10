@@ -1,12 +1,45 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUserLocation } from "../api/open-cage";
+import { db } from "../firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { useAuth } from "../context/AuthContext";
 
 const ZipCodeFeed = () => {
   const [zip, setZip] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [subscriptions, setSubscriptions] = useState<string[]>([]);
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      const fetchSubscriptions = async () => {
+        try {
+          const q = query(
+            collection(db, "subscriptions"),
+            where("userId", "==", user.uid)
+          );
+          const querySnapshot = await getDocs(q);
+          const userSubscriptions: string[] = [];
+
+          querySnapshot.forEach((doc) => {
+            const zipCodes = doc.data().zipCodes as string[];
+            if (zipCodes) {
+              userSubscriptions.push(...zipCodes);
+            }
+          });
+
+          setSubscriptions(userSubscriptions);
+        } catch (error) {
+          setError("Failed to load subscriptions.");
+        }
+      };
+
+      fetchSubscriptions();
+    }
+  }, [user]);
 
   const handleZipCodeSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -32,6 +65,10 @@ const ZipCodeFeed = () => {
       setError("Unable to fetch your ZIP code from location.");
     }
     setLoading(false);
+  };
+
+  const handleSubscriptionClick = (zipCode: string) => {
+    navigate(`/news/${zipCode}`);
   };
 
   return (
@@ -72,6 +109,28 @@ const ZipCodeFeed = () => {
           >
             {loading ? "Fetching ZIP Code..." : "Use Current Location"}
           </button>
+        </div>
+
+        <div className="mt-6 w-full">
+          <h2 className="text-lg font-semibold text-gray-700 mb-2">
+            Your Subscribed ZIP Codes
+          </h2>
+          <ul className="bg-gray-100 p-4 rounded border mb-1 flex gap-2">
+            {subscriptions && subscriptions.length > 0 ? (
+              subscriptions.map((subZip, index) => (
+                <li key={index} className="flex items-center">
+                  <button
+                    onClick={() => handleSubscriptionClick(subZip)}
+                    className="text-blue-400 font-semibold px-4 py-2 rounded-full border border-blue-400 hover:bg-blue-100"
+                  >
+                    {subZip}
+                  </button>
+                </li>
+              ))
+            ) : (
+              <li className="text-gray-500">No subscriptions found.</li>
+            )}
+          </ul>
         </div>
       </div>
     </div>
