@@ -36,6 +36,7 @@ interface Post {
   userId: string;
   zip: string;
   edited?: boolean;
+  link?: string;
 }
 
 const NewsFeed = () => {
@@ -51,6 +52,7 @@ const NewsFeed = () => {
     Map<string, { thumbsUp: boolean; thumbsDown: boolean }>
   >(new Map());
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [link, setLink] = useState<string>("");
 
   const currentUserId = auth.currentUser?.uid;
 
@@ -156,6 +158,10 @@ const NewsFeed = () => {
       : bDate.getTime() - aDate.getTime();
   });
 
+  const handleLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLink(e.target.value);
+  };
+
   const handlePostSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -188,6 +194,7 @@ const NewsFeed = () => {
       edited: false,
       subject: newPost.subject,
       body: newPost.body,
+      link,
     };
 
     try {
@@ -217,6 +224,7 @@ const NewsFeed = () => {
     }
 
     setNewPost({ subject: "", body: "" });
+    setLink("");
     setShowForm(false);
     setEditingPost(null);
   };
@@ -341,6 +349,19 @@ const NewsFeed = () => {
                   Posted by: {post.username} on {post.timestamp}
                 </span>
 
+                {post.link && (
+                  <div className="mt-2">
+                    <a
+                      href={post.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 hover:underline"
+                    >
+                      {post.link}
+                    </a>
+                  </div>
+                )}
+
                 {post.userId === currentUserId && (
                   <div className="mt-2 flex justify-between items-center space-x-2">
                     <div className="flex justify-start space-x-2">
@@ -437,6 +458,15 @@ const NewsFeed = () => {
               onChange={(e) => setNewPost({ ...newPost, body: e.target.value })}
               className="w-full px-4 py-2 border rounded mb-4"
             />
+
+            <input
+              type="url"
+              placeholder="Optional Link"
+              value={link}
+              onChange={handleLinkChange}
+              className="w-full px-4 py-2 border rounded mb-4"
+            />
+
             <button
               type="submit"
               className="w-1/6 px-4 py-2 bg-blue-400 hover:bg-blue-500 text-white rounded"
